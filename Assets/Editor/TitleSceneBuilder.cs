@@ -312,7 +312,7 @@ namespace BOMBOMLemon.Editor
             tmp.fontSize         = fontSize;
             tmp.color            = color;
             tmp.alignment        = TextAlignmentOptions.Center;
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             tmp.overflowMode     = TextOverflowModes.Overflow;
             return go;
         }
@@ -330,7 +330,7 @@ namespace BOMBOMLemon.Editor
 
             var placeholder = MakeTMP(go, "Body", "（準備中）", 32,
                 new Vector2(0, 0), new Vector2(800, 600), new Color(0.9f, 0.9f, 0.9f));
-            placeholder.GetComponent<TextMeshProUGUI>().enableWordWrapping = true;
+            placeholder.GetComponent<TextMeshProUGUI>().textWrappingMode = TextWrappingModes.Normal;
 
             MakeTextButton(go, "CloseButton", "閉じる",
                 new Vector2(0, -750), new Vector2(320, 95), BtnYellow, Dark);
