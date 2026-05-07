@@ -83,43 +83,43 @@ namespace BOMBOMLemon.Editor
             var content = MakeStretchPanel(canvasGo, "Content");
             content.AddComponent<CanvasGroup>();
 
-            // ── Logo images ───────────────────────────────────────────────────
+            // ── Logo images (lemon on top of bubble/text) ─────────────────────
             var bubbleGo = MakeSpriteImage(content, "TitleBubble",
-                "Assets/Sprites/Title_Bubble.png", new Vector2(0, 700), new Vector2(720, 250));
+                "Assets/Sprites/Title_Bubble.png", new Vector2(0, -90), new Vector2(940, 400));
 
             var wordGo = MakeSpriteImage(content, "TitleWord",
-                "Assets/Sprites/Title_Word.png",   new Vector2(-30, 500), new Vector2(750, 200));
+                "Assets/Sprites/Title_Word.png",   new Vector2(-20, -115), new Vector2(860, 290));
 
             var lemonGo = MakeSpriteImage(content, "TitleLemon",
-                "Assets/Sprites/Title_Lemon.png",  new Vector2(210, 450), new Vector2(270, 270));
+                "Assets/Sprites/Title_Lemon.png",  new Vector2(20, 290), new Vector2(620, 620));
 
-            // ── Start button (sprite) ─────────────────────────────────────────
+            // ── Start button (large, bottom area) ────────────────────────────
             var startBtnGo = MakeSpriteButton(content, "StartButton",
-                "Assets/Sprites/start.png", new Vector2(0, 70), new Vector2(500, 140));
+                "Assets/Sprites/start.png", new Vector2(0, -480), new Vector2(800, 205));
 
-            // ── Rules / Topic buttons ─────────────────────────────────────────
-            var rulesBtnGo = MakeTextButton(content, "RulesButton", "ルール",
-                new Vector2(-195, -130), new Vector2(250, 95), BtnYellow, Dark);
+            // ── Top navigation buttons (white pill, top of screen) ────────────
+            var rulesBtnGo = MakeTopButton(content, "RulesButton", "? ルール",
+                new Vector2(-375, 800), new Vector2(205, 74));
 
-            var topicBtnGo = MakeTextButton(content, "TopicButton", "お題",
-                new Vector2(195, -130),  new Vector2(250, 95), BtnYellow, Dark);
+            var topicBtnGo = MakeTopButton(content, "TopicButton", "≡ お題",
+                new Vector2(-138, 800), new Vector2(185, 74));
 
-            // ── Hell Mode button ──────────────────────────────────────────────
+            // ── Hell Mode button (top right) ──────────────────────────────────
             Image    hellIndicatorImg;
             TextMeshProUGUI hellLabelTmp;
             var hellBtnGo = MakeHellModeButton(content,
                 out hellIndicatorImg, out hellLabelTmp,
-                new Vector2(0, -285), new Vector2(390, 88));
+                new Vector2(328, 800), new Vector2(272, 74));
 
-            // ── Info texts ────────────────────────────────────────────────────
+            // ── Info texts (below START) ──────────────────────────────────────
             var infoJa  = MakeTMP(content, "InfoTextJa",
-                "0〜100で答えよう", 28, new Vector2(0, -445), new Vector2(680, 58), Sub);
+                "2〜24人のパーティーゲーム", 30, new Vector2(0, -635), new Vector2(760, 60), Sub);
             var infoEn  = MakeTMP(content, "InfoTextEn",
-                "Guess a number from 0 to 100", 22, new Vector2(0, -500), new Vector2(740, 46), Sub);
+                "A party game for 2-24 players", 24, new Vector2(0, -690), new Vector2(820, 48), Sub);
             var hellJa  = MakeTMP(content, "HellModeInfoJa",
-                "", 24, new Vector2(0, -560), new Vector2(760, 52), Lime);
+                "", 24, new Vector2(0, -745), new Vector2(760, 52), Lime);
             var hellEn  = MakeTMP(content, "HellModeInfoEn",
-                "", 20, new Vector2(0, -612), new Vector2(760, 42), Lime);
+                "", 20, new Vector2(0, -795), new Vector2(760, 42), Lime);
 
             // ── Overlay panels (hidden) ───────────────────────────────────────
             var rulesPanel = MakeOverlayPanel(canvasGo, "RulesPanel", "ルール");
@@ -258,6 +258,27 @@ namespace BOMBOMLemon.Editor
             if (spr != null) { img.sprite = spr; img.preserveAspect = true; }
             var btn = go.AddComponent<Button>();
             DisableNavigation(btn);
+            return go;
+        }
+
+        static GameObject MakeTopButton(GameObject parent, string name, string label,
+            Vector2 pos, Vector2 size)
+        {
+            var bgColor = new Color(1f, 1f, 1f, 0.82f);
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            SetupRT(go, pos, size);
+            var img = go.AddComponent<Image>();
+            img.color = bgColor;
+            var btn = go.AddComponent<Button>();
+            var cols = btn.colors;
+            cols.normalColor      = bgColor;
+            cols.highlightedColor = Color.white;
+            cols.pressedColor     = new Color(0.85f, 0.85f, 0.85f, 0.9f);
+            btn.colors = cols;
+            DisableNavigation(btn);
+            var txt = MakeTMP(go, "Label", label, 28, Vector2.zero, size, Dark);
+            txt.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
             return go;
         }
 
