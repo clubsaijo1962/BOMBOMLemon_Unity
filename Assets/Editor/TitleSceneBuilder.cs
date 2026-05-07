@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using TMPro;
 
@@ -30,6 +31,8 @@ namespace BOMBOMLemon.Editor
                 if (root.GetComponent<EventSystem>() != null) continue;
                 Object.DestroyImmediate(root);
             }
+
+            FixEventSystem(scene);
 
             var lemonPrefab = EnsureRainingLemonPrefab();
 
@@ -155,6 +158,30 @@ namespace BOMBOMLemon.Editor
         // ─────────────────────────────────────────────────────────────────────
         // Helpers
         // ─────────────────────────────────────────────────────────────────────
+
+        static void FixEventSystem(UnityEngine.SceneManagement.Scene scene)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                var es = root.GetComponent<EventSystem>();
+                if (es == null) continue;
+
+                var standalone = root.GetComponent<StandaloneInputModule>();
+                if (standalone != null)
+                    Object.DestroyImmediate(standalone);
+
+                if (root.GetComponent<InputSystemUIInputModule>() == null)
+                    root.AddComponent<InputSystemUIInputModule>();
+
+                // Remove any MonoBehaviours whose backing script has been deleted
+                foreach (var mb in root.GetComponents<MonoBehaviour>())
+                {
+                    if (mb == null)
+                        Object.DestroyImmediate(mb);
+                }
+                break;
+            }
+        }
 
         static T Load<T>(string path) where T : Object
             => AssetDatabase.LoadAssetAtPath<T>(path);
