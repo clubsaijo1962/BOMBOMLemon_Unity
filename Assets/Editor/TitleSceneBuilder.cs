@@ -186,6 +186,18 @@ namespace BOMBOMLemon.Editor
         static T Load<T>(string path) where T : Object
             => AssetDatabase.LoadAssetAtPath<T>(path);
 
+        static Sprite LoadSprite(string path)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer != null && importer.textureType != TextureImporterType.Sprite)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
         static RectTransform SetupRT(GameObject go, Vector2 pos, Vector2 size)
         {
             var rt = go.AddComponent<RectTransform>();
@@ -229,7 +241,7 @@ namespace BOMBOMLemon.Editor
             go.transform.SetParent(parent.transform, false);
             SetupRT(go, pos, size);
             var img = go.AddComponent<Image>();
-            var spr = Load<Sprite>(spritePath);
+            var spr = LoadSprite(spritePath);
             if (spr != null) { img.sprite = spr; img.preserveAspect = true; }
             img.raycastTarget = false;
             return go;
@@ -242,7 +254,7 @@ namespace BOMBOMLemon.Editor
             go.transform.SetParent(parent.transform, false);
             SetupRT(go, pos, size);
             var img = go.AddComponent<Image>();
-            var spr = Load<Sprite>(spritePath);
+            var spr = LoadSprite(spritePath);
             if (spr != null) { img.sprite = spr; img.preserveAspect = true; }
             var btn = go.AddComponent<Button>();
             DisableNavigation(btn);
@@ -355,7 +367,7 @@ namespace BOMBOMLemon.Editor
             var rt  = go.AddComponent<RectTransform>();
             rt.sizeDelta = new Vector2(50, 50);
             var img = go.AddComponent<Image>();
-            var spr = Load<Sprite>("Assets/Sprites/Title_Lemon.png");
+            var spr = LoadSprite("Assets/Sprites/Title_Lemon.png");
             if (spr != null) img.sprite = spr;
             img.raycastTarget = false;
             go.AddComponent<RainingLemonItem>();
