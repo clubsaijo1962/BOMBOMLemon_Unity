@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using TMPro;
+using BOMBOMLemon;
 
 namespace BOMBOMLemon.Editor
 {
@@ -101,19 +102,22 @@ namespace BOMBOMLemon.Editor
             var startBtnGo = MakeSpriteButton(content, "StartButton",
                 "Assets/Sprites/start.png", new Vector2(0, -480), new Vector2(800, 205));
 
-            // ── Top navigation buttons (white pill, top of screen) ────────────
-            var rulesBtnGo = MakeTopButton(content, "RulesButton", "? ルール",
-                new Vector2(-375, 800), new Vector2(205, 74));
+            // ── Top navigation buttons (anchored to top edge) ────────────────
+            // fromRight=false: x offset from left edge
+            // fromRight=true : x offset from right edge
+            // yFromTop        : distance from top of safe area
+            var rulesBtnGo = MakeTopNavButton(content, "RulesButton", "? ルール",
+                false, 22f, 20f, new Vector2(280, 88));
 
-            var topicBtnGo = MakeTopButton(content, "TopicButton", "≡ お題",
-                new Vector2(-138, 800), new Vector2(185, 74));
+            var topicBtnGo = MakeTopNavButton(content, "TopicButton", "≡ お題",
+                false, 314f, 20f, new Vector2(220, 88));
 
-            // ── Hell Mode button (top right) ──────────────────────────────────
+            // ── Hell Mode button (top right, anchored) ────────────────────────
             Image    hellIndicatorImg;
             TextMeshProUGUI hellLabelTmp;
-            var hellBtnGo = MakeHellModeButton(content,
+            var hellBtnGo = MakeHellModeTopButton(content,
                 out hellIndicatorImg, out hellLabelTmp,
-                new Vector2(328, 800), new Vector2(272, 74));
+                22f, 20f, new Vector2(370, 88));
 
             // ── Info texts (below START) ──────────────────────────────────────
             var infoJa  = MakeTMP(content, "InfoTextJa",
@@ -265,13 +269,22 @@ namespace BOMBOMLemon.Editor
             return go;
         }
 
-        static GameObject MakeTopButton(GameObject parent, string name, string label,
-            Vector2 pos, Vector2 size)
+        // Buttons anchored to TOP edge — position never drifts on any screen size
+        static GameObject MakeTopNavButton(GameObject parent, string name, string label,
+            bool fromRight, float xOffset, float yFromTop, Vector2 size)
         {
             var bgColor = new Color(1f, 1f, 1f, 0.92f);
             var go = new GameObject(name);
             go.transform.SetParent(parent.transform, false);
-            SetupRT(go, pos, size);
+            var rt = go.AddComponent<RectTransform>();
+            float ax = fromRight ? 1f : 0f;
+            rt.anchorMin = new Vector2(ax, 1f);
+            rt.anchorMax = new Vector2(ax, 1f);
+            rt.pivot     = new Vector2(ax, 1f);
+            rt.anchoredPosition = fromRight
+                ? new Vector2(-xOffset, -yFromTop)
+                : new Vector2(xOffset,  -yFromTop);
+            rt.sizeDelta = size;
             var img = go.AddComponent<Image>();
             img.color = bgColor;
             var btn = go.AddComponent<Button>();
@@ -281,8 +294,75 @@ namespace BOMBOMLemon.Editor
             cols.pressedColor     = new Color(0.80f, 0.80f, 0.80f);
             btn.colors = cols;
             DisableNavigation(btn);
-            var txt = MakeTMP(go, "Label", label, 30, Vector2.zero, size, Dark);
-            txt.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
+            // Stretch-fill label so text is always centered inside button
+            var lblGo = new GameObject("Label");
+            lblGo.transform.SetParent(go.transform, false);
+            var lblRT = lblGo.AddComponent<RectTransform>();
+            lblRT.anchorMin = Vector2.zero;
+            lblRT.anchorMax = Vector2.one;
+            lblRT.offsetMin = lblRT.offsetMax = Vector2.zero;
+            var tmp = lblGo.AddComponent<TextMeshProUGUI>();
+            tmp.text      = label;
+            tmp.fontSize  = 30;
+            tmp.color     = Dark;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+#pragma warning disable CS0618
+            tmp.enableWordWrapping = false;
+#pragma warning restore CS0618
+            tmp.overflowMode = TextOverflowModes.Overflow;
+            return go;
+        }
+
+        static GameObject MakeHellModeTopButton(GameObject parent,
+            out Image indicatorImg, out TextMeshProUGUI labelTmp,
+            float xFromRight, float yFromTop, Vector2 size)
+        {
+            var bgColor = new Color(1f, 1f, 1f, 0.92f);
+            var go = new GameObject("HellModeButton");
+            go.transform.SetParent(parent.transform, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot     = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-xFromRight, -yFromTop);
+            rt.sizeDelta = size;
+            var img = go.AddComponent<Image>();
+            img.color = bgColor;
+            var btn = go.AddComponent<Button>();
+            DisableNavigation(btn);
+
+            // Indicator dot (left-center of button)
+            var indGo  = new GameObject("HellModeIndicator");
+            indGo.transform.SetParent(go.transform, false);
+            var indRT  = indGo.AddComponent<RectTransform>();
+            indRT.anchorMin = new Vector2(0f, 0.5f);
+            indRT.anchorMax = new Vector2(0f, 0.5f);
+            indRT.pivot     = new Vector2(0f, 0.5f);
+            indRT.anchoredPosition = new Vector2(22f, 0f);
+            indRT.sizeDelta        = new Vector2(22, 22);
+            indicatorImg = indGo.AddComponent<Image>();
+            indicatorImg.color = new Color(0.75f, 0.75f, 0.75f);
+
+            // Label
+            var lblGo = new GameObject("HellModeLabel");
+            lblGo.transform.SetParent(go.transform, false);
+            var lblRT = lblGo.AddComponent<RectTransform>();
+            lblRT.anchorMin = Vector2.zero;
+            lblRT.anchorMax = Vector2.one;
+            lblRT.offsetMin = new Vector2(52f, 0f); // leave room for dot
+            lblRT.offsetMax = Vector2.zero;
+            var tmp = lblGo.AddComponent<TextMeshProUGUI>();
+            tmp.text      = "地獄モード";
+            tmp.fontSize  = 30;
+            tmp.color     = Sub;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+#pragma warning disable CS0618
+            tmp.enableWordWrapping = false;
+#pragma warning restore CS0618
+            tmp.overflowMode = TextOverflowModes.Overflow;
+            labelTmp = tmp;
             return go;
         }
 
@@ -307,36 +387,6 @@ namespace BOMBOMLemon.Editor
             return go;
         }
 
-        static GameObject MakeHellModeButton(GameObject parent,
-            out Image indicatorImg, out TextMeshProUGUI labelTmp,
-            Vector2 pos, Vector2 size)
-        {
-            var go = new GameObject("HellModeButton");
-            go.transform.SetParent(parent.transform, false);
-            SetupRT(go, pos, size);
-            var img = go.AddComponent<Image>();
-            img.color = new Color(1f, 1f, 1f, 0.65f);
-            var btn = go.AddComponent<Button>();
-            DisableNavigation(btn);
-
-            // Indicator dot
-            var indGo = new GameObject("HellModeIndicator");
-            indGo.transform.SetParent(go.transform, false);
-            var indRT = indGo.AddComponent<RectTransform>();
-            indRT.anchorMin = indRT.anchorMax = new Vector2(0.5f, 0.5f);
-            indRT.anchoredPosition = new Vector2(-108f, 0);
-            indRT.sizeDelta        = new Vector2(22, 22);
-            indicatorImg = indGo.AddComponent<Image>();
-            indicatorImg.color = new Color(0.75f, 0.75f, 0.75f);
-
-            // Label
-            var lblGo = MakeTMP(go, "HellModeLabel", "地獄モード", 26,
-                new Vector2(18f, 0), new Vector2(290, 56), Sub);
-            labelTmp = lblGo.GetComponent<TextMeshProUGUI>();
-            labelTmp.fontStyle = FontStyles.Bold;
-
-            return go;
-        }
 
         static GameObject MakeTMP(GameObject parent, string name, string text,
             int fontSize, Vector2 pos, Vector2 size, Color color)
