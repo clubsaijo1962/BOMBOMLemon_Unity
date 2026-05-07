@@ -79,8 +79,12 @@ namespace BOMBOMLemon.Editor
             // ── Lemon Rain layer (fullscreen, behind content) ─────────────────
             var rainParent = MakeStretchPanel(canvasGo, "LemonRainParent");
 
+            // ── Safe-area container (respects iPhone notch / Android cutout) ────
+            var safeAreaGo = MakeStretchPanel(canvasGo, "SafeArea");
+            safeAreaGo.AddComponent<SafeAreaFitter>();
+
             // ── Content group (CanvasGroup for fade-in) ───────────────────────
-            var content = MakeStretchPanel(canvasGo, "Content");
+            var content = MakeStretchPanel(safeAreaGo, "Content");
             content.AddComponent<CanvasGroup>();
 
             // ── Logo images (lemon on top of bubble/text) ─────────────────────
@@ -122,13 +126,13 @@ namespace BOMBOMLemon.Editor
                 "", 20, new Vector2(0, -795), new Vector2(760, 42), Lime);
 
             // ── Overlay panels (hidden) ───────────────────────────────────────
-            var rulesPanel = MakeOverlayPanel(canvasGo, "RulesPanel", "ルール");
-            var topicPanel = MakeOverlayPanel(canvasGo, "TopicManagerPanel", "お題管理");
+            var rulesPanel = MakeOverlayPanel(safeAreaGo, "RulesPanel", "ルール");
+            var topicPanel = MakeOverlayPanel(safeAreaGo, "TopicManagerPanel", "お題管理");
             rulesPanel.SetActive(false);
             topicPanel.SetActive(false);
 
             // ── TitleScreenUI wiring ──────────────────────────────────────────
-            var uiGo = MakeStretchPanel(canvasGo, "TitleScreenUI");
+            var uiGo = MakeStretchPanel(safeAreaGo, "TitleScreenUI");
             var ui   = uiGo.AddComponent<TitleScreenUI>();
             ui.titleBubble        = bubbleGo.GetComponent<RectTransform>();
             ui.titleLemon         = lemonGo.GetComponent<RectTransform>();
@@ -264,7 +268,7 @@ namespace BOMBOMLemon.Editor
         static GameObject MakeTopButton(GameObject parent, string name, string label,
             Vector2 pos, Vector2 size)
         {
-            var bgColor = new Color(1f, 1f, 1f, 0.82f);
+            var bgColor = new Color(1f, 1f, 1f, 0.92f);
             var go = new GameObject(name);
             go.transform.SetParent(parent.transform, false);
             SetupRT(go, pos, size);
@@ -274,10 +278,10 @@ namespace BOMBOMLemon.Editor
             var cols = btn.colors;
             cols.normalColor      = bgColor;
             cols.highlightedColor = Color.white;
-            cols.pressedColor     = new Color(0.85f, 0.85f, 0.85f, 0.9f);
+            cols.pressedColor     = new Color(0.80f, 0.80f, 0.80f);
             btn.colors = cols;
             DisableNavigation(btn);
-            var txt = MakeTMP(go, "Label", label, 28, Vector2.zero, size, Dark);
+            var txt = MakeTMP(go, "Label", label, 30, Vector2.zero, size, Dark);
             txt.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
             return go;
         }
