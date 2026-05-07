@@ -69,7 +69,7 @@ namespace BOMBOMLemon.Editor
             var cs = canvasGo.AddComponent<CanvasScaler>();
             cs.uiScaleMode        = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             cs.referenceResolution = new Vector2(W, H);
-            cs.matchWidthOrHeight  = 0.5f;
+            cs.matchWidthOrHeight  = 0f; // portrait: scale by width
             canvasGo.AddComponent<GraphicRaycaster>();
 
             // ── Background ────────────────────────────────────────────────────
@@ -360,8 +360,8 @@ namespace BOMBOMLemon.Editor
             if (!AssetDatabase.IsValidFolder("Assets/Prefabs"))
                 AssetDatabase.CreateFolder("Assets", "Prefabs");
 
-            var existing = Load<GameObject>(path);
-            if (existing != null) return existing;
+            // Always recreate so sprite changes are reflected
+            if (File.Exists(path)) AssetDatabase.DeleteAsset(path);
 
             var go  = new GameObject("RainingLemonItem");
             var rt  = go.AddComponent<RectTransform>();
