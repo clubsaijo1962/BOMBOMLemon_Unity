@@ -18,7 +18,7 @@ namespace BOMBOMLemon
         [Header("Lemon Rain")]
         public GameObject    rainingLemonPrefab;
         public RectTransform lemonRainParent;
-        private const int LemonCount = 18;
+        private const int LemonCount = 10;
 
         [Header("Main Buttons")]
         public Button startButton;
@@ -162,9 +162,9 @@ namespace BOMBOMLemon
 
             for (int i = 0; i < LemonCount; i++)
             {
-                float size   = Random.Range(48f, 95f);
-                float xOff   = Random.Range(-w * 0.47f, w * 0.47f);
-                float speed  = Random.Range(160f, 290f);
+                float size   = Random.Range(55f, 90f);
+                float xOff   = Random.Range(-w * 0.44f, w * 0.44f);
+                float speed  = Random.Range(65f, 120f);
                 float startY = h * 0.5f + size + Random.Range(0f, h);
 
                 var obj  = Instantiate(rainingLemonPrefab, lemonRainParent);

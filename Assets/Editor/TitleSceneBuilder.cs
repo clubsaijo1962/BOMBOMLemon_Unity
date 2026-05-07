@@ -73,6 +73,8 @@ namespace BOMBOMLemon.Editor
             cs.referenceResolution = new Vector2(W, H);
             cs.matchWidthOrHeight  = 0f;
             canvasGo.AddComponent<GraphicRaycaster>();
+            // Applies Japanese OS font to all Text children at runtime
+            canvasGo.AddComponent<JPFontLoader>();
 
             // ── Background (full canvas, behind everything) ───────────────────
             var bgImg = MakeStretchImage(canvasGo, "Background", null);
@@ -89,31 +91,36 @@ namespace BOMBOMLemon.Editor
             var content = MakeStretchPanel(safeAreaGo, "Content");
             var contentCG = content.AddComponent<CanvasGroup>();
 
-            // ── Title Logo (integrated 3-layer, slightly above center) ─────────
-            // Layer order: Bubble (back) → Lemon (mid) → Word (front)
+            // ── Title Logo (3-layer integrated, center-upper) ─────────────────
+            // Render order in hierarchy = draw order: Bubble first (back),
+            // then Lemon (mid), then Word last (front/topmost).
+            // Visually: large bubble cloud fills the background of the logo area.
+            // Lemon sits with its lower body inside the cloud (overlapping bubble top).
+            // ボムボムレモン text is rendered in front of everything, in the bubble's center.
             var bubbleGo = MakeSpriteImage(content, "TitleBubble",
                 "Assets/Sprites/Title_Bubble.png",
-                new Vector2(0f, 200f), new Vector2(980f, 520f));
+                new Vector2(0f, 130f), new Vector2(980f, 500f));
 
             var lemonGo = MakeSpriteImage(content, "TitleLemon",
                 "Assets/Sprites/Title_Lemon.png",
-                new Vector2(20f, 430f), new Vector2(570f, 570f));
+                new Vector2(10f, 410f), new Vector2(560f, 560f));
 
+            // Word rendered LAST = in front of both lemon and bubble
             var wordGo = MakeSpriteImage(content, "TitleWord",
                 "Assets/Sprites/Title_Word.png",
-                new Vector2(-10f, 80f), new Vector2(900f, 265f));
+                new Vector2(-5f, 55f), new Vector2(910f, 270f));
 
             // ── Main Buttons ──────────────────────────────────────────────────
             // ゲームスタート (sprite)
             var startBtnGo = MakeSpriteButton(content, "StartButton",
                 "Assets/Sprites/start.png",
-                new Vector2(0f, -360f), new Vector2(820f, 200f));
+                new Vector2(0f, -330f), new Vector2(820f, 200f));
 
             // 部屋作成 / 部屋参加 (yellow, side by side)
             var roomCreateGo = MakeYellowButton(content, "RoomCreateButton", "部屋作成",
-                new Vector2(-213f, -535f), new Vector2(385f, 108f));
+                new Vector2(-213f, -500f), new Vector2(385f, 108f));
             var roomJoinGo   = MakeYellowButton(content, "RoomJoinButton",   "部屋参加",
-                new Vector2( 213f, -535f), new Vector2(385f, 108f));
+                new Vector2( 213f, -500f), new Vector2(385f, 108f));
 
             // ── Info Text (below room buttons) ────────────────────────────────
             var infoJa = MakeLabel(content, "InfoTextJa",

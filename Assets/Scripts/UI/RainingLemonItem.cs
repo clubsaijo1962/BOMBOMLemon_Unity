@@ -43,17 +43,17 @@ namespace BOMBOMLemon
 
             // randomize rotation start
             _rot      = Random.Range(0f, 360f);
-            _rotSpeed = Random.Range(30f, 90f) * (Random.value > 0.5f ? 1f : -1f);
+            _rotSpeed = Random.Range(15f, 45f) * (Random.value > 0.5f ? 1f : -1f);
 
-            // horizontal sine drift
-            _waveAmp   = Random.Range(18f, 42f);
-            _waveFreq  = Random.Range(0.25f, 0.65f);
+            // horizontal sine drift (gentle)
+            _waveAmp   = Random.Range(10f, 28f);
+            _waveFreq  = Random.Range(0.15f, 0.4f);
             _wavePhase = Random.Range(0f, Mathf.PI * 2f);
 
-            // squish/stretch (non-uniform scale)
-            _squishFreq  = Random.Range(1.2f, 2.8f);
+            // squish/stretch (subtle puni-puni)
+            _squishFreq  = Random.Range(0.8f, 1.8f);
             _squishPhase = Random.Range(0f, Mathf.PI * 2f);
-            _squishAmt   = Random.Range(0.05f, 0.14f);
+            _squishAmt   = Random.Range(0.03f, 0.07f);
         }
 
         void Update()
