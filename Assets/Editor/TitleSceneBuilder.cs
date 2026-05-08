@@ -1044,6 +1044,7 @@ namespace BOMBOMLemon.Editor
         {
             var go = Stretch(parent, name);
             var bg = go.AddComponent<Image>(); bg.color = new Color(1f,0.96f,0.60f,0.97f); bg.raycastTarget = true;
+            go.AddComponent<SheetPanelActivator>();
 
             var titleGo = new GameObject("PanelTitle"); titleGo.transform.SetParent(go.transform, false);
             var titleRT = titleGo.AddComponent<RectTransform>();
