@@ -11,6 +11,9 @@ namespace BOMBOMLemon.Editor
     [InitializeOnLoad]
     public static class TitleSceneAutoBuilder
     {
+        internal const string BuilderPath = "Assets/Editor/TitleSceneBuilder.cs";
+        internal const string HashPrefKey = "BOMBOMLemon_BuilderHash";
+
         static TitleSceneAutoBuilder()
         {
             TitleSceneBuilder.FixActiveInputHandler();
@@ -26,7 +29,17 @@ namespace BOMBOMLemon.Editor
             const string scenePath = "Assets/Scenes/TitleScene.unity";
             if (!System.IO.File.Exists(scenePath)) return;
 
-            // If TitleScene is already loaded, read rootCount directly — never close it
+            // Rebuild whenever the builder source code has changed
+            string currentHash = FileHash(BuilderPath);
+            if (currentHash != EditorPrefs.GetString(HashPrefKey, ""))
+            {
+                Debug.Log("[BOMBOMLemon] Builder changed — auto-rebuilding scene...");
+                TitleSceneBuilder.Build();
+                EditorPrefs.SetString(HashPrefKey, currentHash);
+                return;
+            }
+
+            // Also rebuild if scene is still empty (first run)
             int sm = UnityEngine.SceneManagement.SceneManager.sceneCount;
             for (int i = 0; i < sm; i++)
             {
@@ -38,10 +51,8 @@ namespace BOMBOMLemon.Editor
                 }
             }
 
-            // Not yet loaded — open additively to inspect, then close safely
             var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
             int rootCount = scene.rootCount;
-            // Guard: don't close if it became the only loaded scene
             if (UnityEngine.SceneManagement.SceneManager.sceneCount > 1)
                 EditorSceneManager.CloseScene(scene, false);
 
@@ -50,6 +61,14 @@ namespace BOMBOMLemon.Editor
                 Debug.Log("[BOMBOMLemon] Scene is empty — auto-building...");
                 TitleSceneBuilder.Build();
             }
+        }
+
+        internal static string FileHash(string path)
+        {
+            if (!System.IO.File.Exists(path)) return "";
+            using var md5    = System.Security.Cryptography.MD5.Create();
+            using var stream = System.IO.File.OpenRead(path);
+            return System.BitConverter.ToString(md5.ComputeHash(stream));
         }
     }
 
@@ -255,6 +274,11 @@ namespace BOMBOMLemon.Editor
             EditorUtility.SetDirty(canvasGo);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
+
+            // Save builder hash so auto-rebuild doesn't fire again until code changes
+            string hash = TitleSceneAutoBuilder.FileHash(TitleSceneAutoBuilder.BuilderPath);
+            EditorPrefs.SetString(TitleSceneAutoBuilder.HashPrefKey, hash);
+
             Debug.Log($"[BOMBOMLemon] Scene built. {_primaryImages.Count} primary + {_darkImages.Count} dark theme images wired.");
         }
 
