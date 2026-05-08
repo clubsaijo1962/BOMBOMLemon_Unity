@@ -3,7 +3,8 @@ using UnityEngine.UI;
 
 namespace BOMBOMLemon
 {
-    [RequireComponent(typeof(RectTransform), typeof(Image))]
+    [RequireComponent(typeof(RectTransform))]
+    [RequireComponent(typeof(Image))]
     public class RainingLemonItem : MonoBehaviour
     {
         private RectTransform _rt;

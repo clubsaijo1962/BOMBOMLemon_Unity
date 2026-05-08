@@ -402,6 +402,13 @@ namespace BOMBOMLemon.Editor
             titleRT.pivot     = new Vector2(0.5f, 1f);
             titleRT.anchoredPosition = new Vector2(0f, -40f);
             titleRT.sizeDelta        = new Vector2(0f, 60f);
+            // Padding: left 24pt, right 60pt (space for close button), keep height via offsetMin/Max Y
+            // With anchor top-edge (anchorMin.y=anchorMax.y=1):
+            //   offsetMax.y = distance from top anchor to top edge = -(top padding)
+            //   offsetMin.y = distance from top anchor to bottom edge = -(top padding + height)
+            titleRT.offsetMin = new Vector2(24f,   -(40f + 60f));  // left=24, bottom at 100pt below top
+            titleRT.offsetMax = new Vector2(-60f,  -40f);           // right=60, top at 40pt below top
+
             var titleTxt = titleGo.AddComponent<Text>();
             titleTxt.text      = title;
             titleTxt.fontSize  = 26;
@@ -409,11 +416,6 @@ namespace BOMBOMLemon.Editor
             titleTxt.color     = DarkBrown;
             titleTxt.alignment = TextAnchor.MiddleLeft;
             titleTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
-
-            // Offset to make room for close button
-            var titleRT2 = titleRT;
-            titleRT2.offsetMin = new Vector2(24f,  0f);
-            titleRT2.offsetMax = new Vector2(-60f, 0f);
 
             // Close button (×) top-right
             var closeGo = new GameObject("CloseButton");
@@ -427,7 +429,7 @@ namespace BOMBOMLemon.Editor
             closeImg.color = Color.clear;
             var closeBtn = closeGo.AddComponent<Button>();
             NoNav(closeBtn);
-            closeBtn.onClick.AddListener(() => go.SetActive(false));
+            // onClick listener is wired at runtime by TitleScreenUI.WireCloseButton()
 
             var closeXGo = new GameObject("X");
             closeXGo.transform.SetParent(closeGo.transform, false);

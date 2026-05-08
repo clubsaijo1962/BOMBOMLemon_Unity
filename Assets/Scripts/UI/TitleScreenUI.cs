@@ -201,7 +201,23 @@ namespace BOMBOMLemon
             rulesButton?.onClick.AddListener(OnRules);
             topicButton?.onClick.AddListener(OnTopic);
             hellModeButton?.onClick.AddListener(OnHellToggle);
+
+            // Wire close buttons inside sheet panels (lambdas aren't serialized so we do it here)
+            WireCloseButton(rulesPanel);
+            WireCloseButton(topicManagerPanel);
+
             RefreshHellMode();
+        }
+
+        private static void WireCloseButton(GameObject panel)
+        {
+            if (panel == null) return;
+            var close = panel.transform.Find("CloseButton");
+            if (close == null) return;
+            var btn = close.GetComponent<Button>();
+            if (btn == null) return;
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() => panel.SetActive(false));
         }
 
         private void OnStart()
