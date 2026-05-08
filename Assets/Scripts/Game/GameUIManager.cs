@@ -22,6 +22,12 @@ namespace BOMBOMLemon
         public GameObject gameClearPanel;
         public GameObject gameOverPanel;
 
+        [Header("Theme – Primary color images (start/next buttons etc.)")]
+        public Image[] primaryColorImages;
+
+        [Header("Theme – Dark color images (secondary buttons etc.)")]
+        public Image[] darkColorImages;
+
         void Awake() => Instance = this;
 
         void Start()
@@ -40,19 +46,34 @@ namespace BOMBOMLemon
 
         void OnPhaseChanged(GamePhase phase)
         {
-            if (sharedBackground != null && GameManager.Instance != null)
-                sharedBackground.color = GameManager.Instance.BgColor;
+            var gm = GameManager.Instance;
 
-            SetActive(titlePanel,       phase == GamePhase.Title);
-            SetActive(setupPanel,       phase == GamePhase.Setup);
-            SetActive(topicDisplayPanel,phase == GamePhase.TopicDisplay);
-            SetActive(secretRevealPanel,phase == GamePhase.SecretReveal);
-            SetActive(discussionPanel,  phase == GamePhase.Discussion);
-            SetActive(inputAnswerPanel, phase == GamePhase.InputAnswer);
-            SetActive(resultPanel,      phase == GamePhase.Result);
-            SetActive(lastTurnPanel,    phase == GamePhase.LastTurnWarning);
-            SetActive(gameClearPanel,   phase == GamePhase.GameClear);
-            SetActive(gameOverPanel,    phase == GamePhase.GameOver);
+            // ── Background ───────────────────────────────────────────────────
+            if (sharedBackground != null && gm != null)
+                sharedBackground.color = gm.BgColor;
+
+            // ── Theme-colour images ──────────────────────────────────────────
+            if (gm != null)
+            {
+                var pc = gm.PrimaryColor;
+                var dc = gm.DarkColor;
+                if (primaryColorImages != null)
+                    foreach (var img in primaryColorImages) if (img) img.color = pc;
+                if (darkColorImages != null)
+                    foreach (var img in darkColorImages)   if (img) img.color = dc;
+            }
+
+            // ── Panel visibility ─────────────────────────────────────────────
+            SetActive(titlePanel,        phase == GamePhase.Title);
+            SetActive(setupPanel,        phase == GamePhase.Setup);
+            SetActive(topicDisplayPanel, phase == GamePhase.TopicDisplay);
+            SetActive(secretRevealPanel, phase == GamePhase.SecretReveal);
+            SetActive(discussionPanel,   phase == GamePhase.Discussion);
+            SetActive(inputAnswerPanel,  phase == GamePhase.InputAnswer);
+            SetActive(resultPanel,       phase == GamePhase.Result);
+            SetActive(lastTurnPanel,     phase == GamePhase.LastTurnWarning);
+            SetActive(gameClearPanel,    phase == GamePhase.GameClear);
+            SetActive(gameOverPanel,     phase == GamePhase.GameOver);
         }
 
         static void SetActive(GameObject go, bool active)

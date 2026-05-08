@@ -246,6 +246,8 @@ namespace BOMBOMLemon
             {
                 GameManager.Instance.LimeMode = !GameManager.Instance.LimeMode;
                 RefreshHellMode();
+                // Notify GameUIManager to refresh background + theme colors
+                GameManager.Instance.NotifyStateChanged();
             }
         }
 
