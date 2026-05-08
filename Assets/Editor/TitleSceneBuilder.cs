@@ -632,44 +632,206 @@ namespace BOMBOMLemon.Editor
 
         static void BuildTopicContent(GameObject panel)
         {
-            // Show all topics grouped by category in a scrollable list
-            var (_, contentRT) = MakeScrollView(panel, 110, 20, 20);
+            // Search field at top
+            var sfGo = MakeSearchField(panel, "SearchField", "🔍 お題を検索…");
+
+            // Scroll view for the dynamic topic list
+            var (_, contentRT) = MakeScrollView(panel, 116, 16, 0);
             var vlg = contentRT.gameObject.AddComponent<VerticalLayoutGroup>();
-            vlg.spacing = 4; vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
+            vlg.spacing = 2; vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
+            vlg.padding = new RectOffset(0, 0, 2, 8);
 
-            // Build topic entries grouped by category
-            TopicCategory? lastCat = null;
-            foreach (var topic in TopicData.AllTopics)
-            {
-                // Category header
-                if (lastCat != topic.Category)
-                {
-                    lastCat = topic.Category;
-                    var catGo = new GameObject($"Cat_{topic.Category}");
-                    catGo.transform.SetParent(contentRT, false);
-                    catGo.AddComponent<LayoutElement>().minHeight = 34;
-                    var bg = catGo.AddComponent<Image>(); bg.color = new Color(0.9f, 0.78f, 0.2f, 0.4f);
-                    var catTxt = new GameObject("T"); catTxt.transform.SetParent(catGo.transform, false);
-                    var catRT  = catTxt.AddComponent<RectTransform>();
-                    catRT.anchorMin = Vector2.zero; catRT.anchorMax = Vector2.one;
-                    catRT.offsetMin = new Vector2(10, 0); catRT.offsetMax = new Vector2(-10, 0);
-                    var txt = catTxt.AddComponent<Text>();
-                    txt.text = $"▶ {CategoryLabels.LabelLowJa(topic.Category)}  →  {CategoryLabels.LabelHighJa(topic.Category)}";
-                    txt.fontSize = 11; txt.fontStyle = FontStyle.Bold;
-                    txt.color = DarkBrown; txt.alignment = TextAnchor.MiddleLeft;
-                    txt.horizontalOverflow = HorizontalWrapMode.Overflow;
-                }
+            // + button (floating, bottom-right)
+            var addGo = new GameObject("AddButton"); addGo.transform.SetParent(panel.transform, false);
+            var addRT = addGo.AddComponent<RectTransform>();
+            addRT.anchorMin = addRT.anchorMax = new Vector2(1, 0); addRT.pivot = new Vector2(1, 0);
+            addRT.anchoredPosition = new Vector2(-18, 18); addRT.sizeDelta = new Vector2(48, 48);
+            var addImg = addGo.AddComponent<Image>(); addImg.color = new Color(0.18f, 0.55f, 0.12f);
+            var addBtn = addGo.AddComponent<Button>(); NoNav(addBtn);
+            _primaryImages.Add(addImg);
+            var addLGo = new GameObject("L"); addLGo.transform.SetParent(addGo.transform, false);
+            var addLRT = addLGo.AddComponent<RectTransform>();
+            addLRT.anchorMin = Vector2.zero; addLRT.anchorMax = Vector2.one; addLRT.offsetMin = addLRT.offsetMax = Vector2.zero;
+            var addTxt = addLGo.AddComponent<Text>(); addTxt.text = "+"; addTxt.fontSize = 28;
+            addTxt.fontStyle = FontStyle.Bold; addTxt.color = Color.white; addTxt.alignment = TextAnchor.MiddleCenter;
 
-                // Topic row
-                var rGo = new GameObject($"T{topic.Id}"); rGo.transform.SetParent(contentRT, false);
-                rGo.AddComponent<LayoutElement>().minHeight = 30;
-                var rTxt = rGo.AddComponent<Text>();
-                rTxt.text = $"  {topic.Japanese}";
-                rTxt.fontSize = 12; rTxt.color = DarkBrown;
-                rTxt.alignment = TextAnchor.MiddleLeft;
-                rTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
-                rTxt.verticalOverflow   = VerticalWrapMode.Overflow;
-            }
+            // Topic form overlay panel
+            var formPanelGo = Stretch(panel, "TopicFormPanel");
+            formPanelGo.AddComponent<Image>().color = new Color(0, 0, 0, 0.55f);
+            formPanelGo.SetActive(false);
+            var formUi = BuildTopicFormContent(formPanelGo);
+
+            // Wire TopicManagerUI
+            var mgr = panel.AddComponent<TopicManagerUI>();
+            mgr.listContent  = contentRT;
+            mgr.searchField  = sfGo.GetComponent<InputField>();
+            mgr.addButton    = addBtn;
+            mgr.formPanel    = formUi;
+            EditorUtility.SetDirty(panel);
+        }
+
+        static TopicFormUI BuildTopicFormContent(GameObject formPanel)
+        {
+            // Card background
+            var cardGo = new GameObject("Card"); cardGo.transform.SetParent(formPanel.transform, false);
+            var cardRT = cardGo.AddComponent<RectTransform>();
+            cardRT.anchorMin = new Vector2(0.04f, 0.22f); cardRT.anchorMax = new Vector2(0.96f, 0.78f);
+            cardRT.offsetMin = cardRT.offsetMax = Vector2.zero;
+            cardGo.AddComponent<Image>().color = new Color(1f, 0.97f, 0.70f, 0.98f);
+
+            // Title text
+            var titleGo = new GameObject("Title"); titleGo.transform.SetParent(cardGo.transform, false);
+            var titleRT = titleGo.AddComponent<RectTransform>();
+            titleRT.anchorMin = new Vector2(0, 1); titleRT.anchorMax = new Vector2(1, 1);
+            titleRT.pivot = new Vector2(0.5f, 1f); titleRT.anchoredPosition = new Vector2(0, -12);
+            titleRT.sizeDelta = new Vector2(-32, 36);
+            var titleTxt = titleGo.AddComponent<Text>(); titleTxt.text = "カスタムお題を追加";
+            titleTxt.fontSize = 18; titleTxt.fontStyle = FontStyle.Bold;
+            titleTxt.color = DarkBrown; titleTxt.alignment = TextAnchor.MiddleLeft;
+            titleTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+            // Fields VStack
+            var vl = new GameObject("Fields"); vl.transform.SetParent(cardGo.transform, false);
+            var vlRT = vl.AddComponent<RectTransform>();
+            vlRT.anchorMin = Vector2.zero; vlRT.anchorMax = Vector2.one;
+            vlRT.offsetMin = new Vector2(16, 56); vlRT.offsetMax = new Vector2(-16, -56);
+            var vlg = vl.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing = 8; vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
+
+            var jpField  = BuildInputFieldRow(vl, "JpField",  "お題（日本語）", 14);
+            var enField  = BuildInputFieldRow(vl, "EnField",  "Topic (English)", 13);
+            var catDrop  = BuildDropdownRow(vl, "CategoryDrop");
+
+            // Buttons
+            var btnRow = new GameObject("BtnRow"); btnRow.transform.SetParent(cardGo.transform, false);
+            var btnRT  = btnRow.AddComponent<RectTransform>();
+            btnRT.anchorMin = new Vector2(0, 0); btnRT.anchorMax = new Vector2(1, 0);
+            btnRT.pivot = new Vector2(0.5f, 0); btnRT.anchoredPosition = new Vector2(0, 8);
+            btnRT.sizeDelta = new Vector2(-32, 42);
+            var hg = btnRow.AddComponent<HorizontalLayoutGroup>();
+            hg.spacing = 10; hg.childForceExpandWidth = true; hg.childForceExpandHeight = true;
+
+            var cancelGo = MakePrimaryButton(btnRow, "CancelBtn", "キャンセル", 14, DarkBrown, new Color(1,1,1,0.65f), new Vector2(0,0));
+            var saveGo   = MakePrimaryButton(btnRow, "SaveBtn",   "保存",       15, Color.white, new Color(0.18f,0.55f,0.12f), new Vector2(0,0));
+            _primaryImages.Add(saveGo.GetComponent<Image>());
+
+            // TopicFormUI component
+            var formUi = formPanel.AddComponent<TopicFormUI>();
+            formUi.panel            = formPanel;
+            formUi.titleText        = titleTxt;
+            formUi.jpField          = jpField;
+            formUi.enField          = enField;
+            formUi.categoryDropdown = catDrop;
+            formUi.saveButton       = saveGo.GetComponent<Button>();
+            formUi.cancelButton     = cancelGo.GetComponent<Button>();
+            EditorUtility.SetDirty(formPanel);
+            return formUi;
+        }
+
+        static InputField BuildInputFieldRow(GameObject parent, string name, string placeholder, int fontSize)
+        {
+            var go = new GameObject(name); go.transform.SetParent(parent.transform, false);
+            go.AddComponent<LayoutElement>().minHeight = 38;
+            go.AddComponent<Image>().color = new Color(1,1,1,0.80f);
+            var field = go.AddComponent<InputField>();
+
+            var phGo = new GameObject("Placeholder"); phGo.transform.SetParent(go.transform, false);
+            var phRT = phGo.AddComponent<RectTransform>();
+            phRT.anchorMin = Vector2.zero; phRT.anchorMax = Vector2.one;
+            phRT.offsetMin = new Vector2(6, 2); phRT.offsetMax = new Vector2(-6, -2);
+            var phTxt = phGo.AddComponent<Text>(); phTxt.text = placeholder;
+            phTxt.fontSize = fontSize; phTxt.color = new Color(0.5f,0.4f,0.2f,0.7f);
+            phTxt.alignment = TextAnchor.MiddleLeft;
+            phTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            field.placeholder = phTxt;
+
+            var tGo = new GameObject("Text"); tGo.transform.SetParent(go.transform, false);
+            var tRT = tGo.AddComponent<RectTransform>();
+            tRT.anchorMin = Vector2.zero; tRT.anchorMax = Vector2.one;
+            tRT.offsetMin = new Vector2(6, 2); tRT.offsetMax = new Vector2(-6, -2);
+            var txt = tGo.AddComponent<Text>(); txt.fontSize = fontSize;
+            txt.color = DarkBrown; txt.alignment = TextAnchor.MiddleLeft;
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            field.textComponent = txt;
+            return field;
+        }
+
+        static Dropdown BuildDropdownRow(GameObject parent, string name)
+        {
+            var go = new GameObject(name); go.transform.SetParent(parent.transform, false);
+            go.AddComponent<LayoutElement>().minHeight = 38;
+            go.AddComponent<Image>().color = new Color(1,1,1,0.80f);
+            var dd = go.AddComponent<Dropdown>();
+
+            // Label
+            var lblGo = new GameObject("Label"); lblGo.transform.SetParent(go.transform, false);
+            var lblRT = lblGo.AddComponent<RectTransform>();
+            lblRT.anchorMin = Vector2.zero; lblRT.anchorMax = new Vector2(0.85f, 1);
+            lblRT.offsetMin = new Vector2(6, 2); lblRT.offsetMax = new Vector2(-4, -2);
+            var lblTxt = lblGo.AddComponent<Text>(); lblTxt.text = "必要性 (Necessary)";
+            lblTxt.fontSize = 13; lblTxt.color = DarkBrown; lblTxt.alignment = TextAnchor.MiddleLeft;
+            dd.captionText = lblTxt;
+
+            // Arrow
+            var arrGo = new GameObject("Arrow"); arrGo.transform.SetParent(go.transform, false);
+            var arrRT = arrGo.AddComponent<RectTransform>();
+            arrRT.anchorMin = new Vector2(0.85f, 0); arrRT.anchorMax = Vector2.one;
+            arrRT.offsetMin = arrRT.offsetMax = Vector2.zero;
+            var arrTxt = arrGo.AddComponent<Text>(); arrTxt.text = "▼";
+            arrTxt.fontSize = 12; arrTxt.color = SubBrown; arrTxt.alignment = TextAnchor.MiddleCenter;
+
+            // Template (minimal, required by Dropdown)
+            var tmplGo = new GameObject("Template"); tmplGo.transform.SetParent(go.transform, false);
+            var tmplRT = tmplGo.AddComponent<RectTransform>();
+            tmplRT.anchorMin = new Vector2(0,0); tmplRT.anchorMax = new Vector2(1,0);
+            tmplRT.pivot = new Vector2(0.5f,1); tmplRT.anchoredPosition = Vector2.zero;
+            tmplRT.sizeDelta = new Vector2(0, 120);
+            var tmplImg = tmplGo.AddComponent<Image>(); tmplImg.color = new Color(1f, 0.97f, 0.70f);
+            tmplGo.AddComponent<ScrollRect>().content = tmplRT;
+            var itemGo = new GameObject("Item"); itemGo.transform.SetParent(tmplGo.transform, false);
+            itemGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 30);
+            var tog = itemGo.AddComponent<Toggle>();
+            var itmLblGo = new GameObject("Item Label"); itmLblGo.transform.SetParent(itemGo.transform, false);
+            var itmRT = itmLblGo.AddComponent<RectTransform>();
+            itmRT.anchorMin = Vector2.zero; itmRT.anchorMax = Vector2.one; itmRT.offsetMin = new Vector2(6,0); itmRT.offsetMax = Vector2.zero;
+            var itmTxt = itmLblGo.AddComponent<Text>(); itmTxt.fontSize = 13; itmTxt.color = DarkBrown; itmTxt.alignment = TextAnchor.MiddleLeft;
+            dd.itemText = itmTxt;
+            dd.template = tmplRT;
+            tmplGo.SetActive(false);
+
+            dd.targetGraphic = go.GetComponent<Image>();
+            return dd;
+        }
+
+        static GameObject MakeSearchField(GameObject parent, string name, string placeholder)
+        {
+            var go = new GameObject(name); go.transform.SetParent(parent.transform, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0, 1); rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(0, -108); rt.sizeDelta = new Vector2(-32, 36);
+            go.AddComponent<Image>().color = new Color(1,1,1,0.70f);
+            var field = go.AddComponent<InputField>();
+
+            var phGo = new GameObject("Placeholder"); phGo.transform.SetParent(go.transform, false);
+            var phRT = phGo.AddComponent<RectTransform>();
+            phRT.anchorMin = Vector2.zero; phRT.anchorMax = Vector2.one;
+            phRT.offsetMin = new Vector2(8, 2); phRT.offsetMax = new Vector2(-8, -2);
+            var phTxt = phGo.AddComponent<Text>(); phTxt.text = placeholder;
+            phTxt.fontSize = 13; phTxt.color = new Color(0.55f,0.42f,0.18f,0.8f);
+            phTxt.alignment = TextAnchor.MiddleLeft;
+            phTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            field.placeholder = phTxt;
+
+            var tGo = new GameObject("Text"); tGo.transform.SetParent(go.transform, false);
+            var tRT = tGo.AddComponent<RectTransform>();
+            tRT.anchorMin = Vector2.zero; tRT.anchorMax = Vector2.one;
+            tRT.offsetMin = new Vector2(8, 2); tRT.offsetMax = new Vector2(-8, -2);
+            var txt = tGo.AddComponent<Text>(); txt.fontSize = 13;
+            txt.color = DarkBrown; txt.alignment = TextAnchor.MiddleLeft;
+            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            field.textComponent = txt;
+            return go;
         }
 
         // ═══════════════════════════════════════════════════════════════════

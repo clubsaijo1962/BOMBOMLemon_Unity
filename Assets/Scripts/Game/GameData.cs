@@ -122,6 +122,23 @@ namespace BOMBOMLemon
         public string LabelHighEn => CategoryLabels.LabelHighEn(Category);
     }
 
+    [System.Serializable]
+    public class UserTopic
+    {
+        public int           Id;       // always negative to distinguish from defaults
+        public string        Japanese;
+        public string        English;
+        public TopicCategory Category;
+
+        public Topic ToTopic() => new Topic
+        {
+            Id       = Id,
+            Japanese = Japanese ?? "",
+            English  = English  ?? "",
+            Category = Category,
+        };
+    }
+
     public static class TopicData
     {
         public static readonly List<Topic> AllTopics = new List<Topic>

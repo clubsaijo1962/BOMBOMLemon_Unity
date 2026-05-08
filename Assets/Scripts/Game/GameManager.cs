@@ -33,6 +33,12 @@ namespace BOMBOMLemon
         public bool LimeMode = false;
         public bool KeepSettings = false;
 
+        // ── Topic settings ───────────────────────────────────────────────────
+        public bool         UseDefaultTopics      = true;
+        public HashSet<int> HiddenDefaultTopicIDs = new HashSet<int>();
+        public List<UserTopic> UserTopics         = new List<UserTopic>();
+        private int _nextUserTopicId = -1;
+
         // ── In-game player management ────────────────────────────────────────
         public bool RequestingAddPlayer = false;
         public string PlayerRemoveErrorMessage = null;
@@ -105,6 +111,7 @@ namespace BOMBOMLemon
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 InitDefaultNames();
+                LoadTopicSettings();
             }
             else Destroy(gameObject);
         }
@@ -149,12 +156,12 @@ namespace BOMBOMLemon
 
         public void ChangeCurrentTopic()
         {
-            var topics = TopicData.AllTopics;
+            var topics = GetActiveTopics();
             if (topics.Count == 0) return;
             if (_shuffledTopicQueue.Count == 0) RebuildTopicQueue();
 
             // Skip if same topic would repeat
-            if (topics.Count > 1 &&
+            if (topics.Count > 1 && _shuffledTopicQueue.Count > 0 &&
                 topics[Mathf.Min(_shuffledTopicQueue[0], topics.Count - 1)].Id == CurrentTopic.Id)
             {
                 int first = _shuffledTopicQueue[0];
@@ -162,6 +169,7 @@ namespace BOMBOMLemon
                 _shuffledTopicQueue.Add(first);
                 if (_shuffledTopicQueue.Count == 0) RebuildTopicQueue();
             }
+            if (_shuffledTopicQueue.Count == 0) RebuildTopicQueue();
             int idx = _shuffledTopicQueue[0];
             _shuffledTopicQueue.RemoveAt(0);
             CurrentTopic = topics[Mathf.Min(idx, topics.Count - 1)];
@@ -406,10 +414,114 @@ namespace BOMBOMLemon
             NotifyStateChanged();
         }
 
+        // ── Topic management ──────────────────────────────────────────────────
+        public List<Topic> GetActiveTopics()
+        {
+            var result = new List<Topic>();
+            if (UseDefaultTopics)
+                foreach (var t in TopicData.AllTopics)
+                    if (!HiddenDefaultTopicIDs.Contains(t.Id))
+                        result.Add(t);
+            foreach (var ut in UserTopics)
+                result.Add(ut.ToTopic());
+            return result;
+        }
+
+        public void SetUseDefaultTopics(bool value)
+        {
+            UseDefaultTopics = value;
+            SaveTopicSettings();
+            NotifyStateChanged();
+        }
+
+        public void SetHideDefaultTopic(int id, bool hide)
+        {
+            if (hide) HiddenDefaultTopicIDs.Add(id);
+            else      HiddenDefaultTopicIDs.Remove(id);
+            SaveTopicSettings();
+            NotifyStateChanged();
+        }
+
+        public void ShowAllDefaultTopics()
+        {
+            HiddenDefaultTopicIDs.Clear();
+            SaveTopicSettings();
+            NotifyStateChanged();
+        }
+
+        public void HideAllDefaultTopics()
+        {
+            foreach (var t in TopicData.AllTopics) HiddenDefaultTopicIDs.Add(t.Id);
+            SaveTopicSettings();
+            NotifyStateChanged();
+        }
+
+        public void AddUserTopic(string jp, string en, TopicCategory cat)
+        {
+            UserTopics.Add(new UserTopic { Id = _nextUserTopicId--, Japanese = jp, English = en, Category = cat });
+            SaveTopicSettings();
+            NotifyStateChanged();
+        }
+
+        public void UpdateUserTopic(int id, string jp, string en, TopicCategory cat)
+        {
+            var ut = UserTopics.Find(t => t.Id == id);
+            if (ut == null) return;
+            ut.Japanese = jp; ut.English = en; ut.Category = cat;
+            SaveTopicSettings();
+            NotifyStateChanged();
+        }
+
+        public void DeleteUserTopic(int id)
+        {
+            UserTopics.RemoveAll(t => t.Id == id);
+            SaveTopicSettings();
+            NotifyStateChanged();
+        }
+
+        [System.Serializable]
+        private class TopicSettingsData
+        {
+            public bool        useDefaultTopics = true;
+            public int[]       hiddenIds        = new int[0];
+            public UserTopic[] userTopics       = new UserTopic[0];
+            public int         nextId           = -1;
+        }
+
+        private void SaveTopicSettings()
+        {
+            var data = new TopicSettingsData
+            {
+                useDefaultTopics = UseDefaultTopics,
+                hiddenIds        = new int[HiddenDefaultTopicIDs.Count],
+                userTopics       = UserTopics.ToArray(),
+                nextId           = _nextUserTopicId
+            };
+            HiddenDefaultTopicIDs.CopyTo(data.hiddenIds);
+            PlayerPrefs.SetString("TopicSettings", JsonUtility.ToJson(data));
+            PlayerPrefs.Save();
+        }
+
+        private void LoadTopicSettings()
+        {
+            string json = PlayerPrefs.GetString("TopicSettings", "");
+            if (string.IsNullOrEmpty(json)) return;
+            try
+            {
+                var data = JsonUtility.FromJson<TopicSettingsData>(json);
+                UseDefaultTopics      = data.useDefaultTopics;
+                HiddenDefaultTopicIDs = new HashSet<int>(data.hiddenIds ?? new int[0]);
+                UserTopics            = new List<UserTopic>(data.userTopics ?? new UserTopic[0]);
+                _nextUserTopicId      = data.nextId;
+            }
+            catch { }
+        }
+
         // ── Internal helpers ──────────────────────────────────────────────────
         private void RebuildTopicQueue()
         {
-            int n = TopicData.AllTopics.Count;
+            var topics = GetActiveTopics();
+            int n = topics.Count;
             _shuffledTopicQueue = new List<int>(n);
             for (int i = 0; i < n; i++) _shuffledTopicQueue.Add(i);
             Shuffle(_shuffledTopicQueue);
@@ -417,20 +529,24 @@ namespace BOMBOMLemon
 
         private Topic PickNextTopic()
         {
-            var topics = TopicData.AllTopics;
-            if (topics.Count == 0) return topics[0];
+            var topics = GetActiveTopics();
+            if (topics.Count == 0) return TopicData.AllTopics[0];
             if (_shuffledTopicQueue.Count == 0) RebuildTopicQueue();
 
             // Avoid back-to-back repeat
-            if (_shuffledTopicQueue.Count > 1 && topics[_shuffledTopicQueue[0]].Id == CurrentTopic.Id)
+            if (_shuffledTopicQueue.Count > 1)
             {
-                int first = _shuffledTopicQueue[0];
-                _shuffledTopicQueue.RemoveAt(0);
-                _shuffledTopicQueue.Add(first);
+                int fi = Mathf.Min(_shuffledTopicQueue[0], topics.Count - 1);
+                if (topics[fi].Id == CurrentTopic.Id)
+                {
+                    int first = _shuffledTopicQueue[0];
+                    _shuffledTopicQueue.RemoveAt(0);
+                    _shuffledTopicQueue.Add(first);
+                }
             }
-            int idx = _shuffledTopicQueue[0];
+            int idx = Mathf.Min(_shuffledTopicQueue[0], topics.Count - 1);
             _shuffledTopicQueue.RemoveAt(0);
-            return topics[Mathf.Min(idx, topics.Count - 1)];
+            return topics[idx];
         }
 
         private void InitDefaultNames()
