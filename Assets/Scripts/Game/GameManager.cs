@@ -388,6 +388,24 @@ namespace BOMBOMLemon
             NotifyStateChanged();
         }
 
+        // ── Setup-phase player management (free, no lemon/order changes) ─────
+        public void SetupAddPlayer(string name = "")
+        {
+            if (PlayerCount >= 24) return;
+            string pName = string.IsNullOrEmpty(name.Trim()) ? $"プレイヤー{PlayerCount + 1}" : name.Trim();
+            PlayerNames.Add(pName);
+            PlayerCount++;
+            NotifyStateChanged();
+        }
+
+        public void SetupRemovePlayer(int idx)
+        {
+            if (PlayerCount <= 2 || idx < 0 || idx >= PlayerNames.Count) return;
+            PlayerNames.RemoveAt(idx);
+            PlayerCount--;
+            NotifyStateChanged();
+        }
+
         // ── Internal helpers ──────────────────────────────────────────────────
         private void RebuildTopicQueue()
         {
