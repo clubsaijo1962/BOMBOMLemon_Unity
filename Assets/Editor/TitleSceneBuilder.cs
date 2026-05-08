@@ -56,6 +56,8 @@ namespace BOMBOMLemon.Editor
         [MenuItem("BOMBOMLemon/Build Title Scene")]
         public static void Build()
         {
+            FixActiveInputHandler();
+
             var scene = EditorSceneManager.OpenScene("Assets/Scenes/TitleScene.unity");
 
             // Clear everything except Camera & EventSystem
@@ -550,6 +552,19 @@ namespace BOMBOMLemon.Editor
             Object.DestroyImmediate(go);
             AssetDatabase.Refresh();
             return prefab;
+        }
+
+        // ── Input System setting fix ──────────────────────────────────────
+        // activeInputHandler: 0=Old, 1=New(InputSystem), 2=Both; -1 is invalid
+        static void FixActiveInputHandler()
+        {
+            const string path = "ProjectSettings/ProjectSettings.asset";
+            if (!System.IO.File.Exists(path)) return;
+            var text = System.IO.File.ReadAllText(path);
+            if (!text.Contains("m_ActiveInputHandler: -1")) return;
+            System.IO.File.WriteAllText(path,
+                text.Replace("m_ActiveInputHandler: -1", "m_ActiveInputHandler: 1"));
+            Debug.Log("[BOMBOMLemon] Fixed activeInputHandler -1 → 1 (New Input System)");
         }
 
         // ── EventSystem: switch to InputSystem module ─────────────────────
