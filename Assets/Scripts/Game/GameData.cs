@@ -16,6 +16,13 @@ namespace BOMBOMLemon
         GameOver
     }
 
+    public struct PlayerRemoveOption
+    {
+        public int Id;          // playerNames index
+        public string Name;
+        public bool HasAnswered;
+    }
+
     public struct RoundResult
     {
         public int Diff;
