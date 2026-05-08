@@ -22,11 +22,29 @@ namespace BOMBOMLemon.Editor
             if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
             EditorApplication.update -= OnFirstUpdate;
+
             const string scenePath = "Assets/Scenes/TitleScene.unity";
             if (!System.IO.File.Exists(scenePath)) return;
+
+            // If TitleScene is already loaded, read rootCount directly — never close it
+            int sm = UnityEngine.SceneManagement.SceneManager.sceneCount;
+            for (int i = 0; i < sm; i++)
+            {
+                var loaded = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                if (loaded.path == scenePath)
+                {
+                    if (loaded.rootCount <= 2) TitleSceneBuilder.Build();
+                    return;
+                }
+            }
+
+            // Not yet loaded — open additively to inspect, then close safely
             var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
             int rootCount = scene.rootCount;
-            EditorSceneManager.CloseScene(scene, false);
+            // Guard: don't close if it became the only loaded scene
+            if (UnityEngine.SceneManagement.SceneManager.sceneCount > 1)
+                EditorSceneManager.CloseScene(scene, false);
+
             if (rootCount <= 2)
             {
                 Debug.Log("[BOMBOMLemon] Scene is empty — auto-building...");
