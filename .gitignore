@@ -1,3 +1,6 @@
+# Audio meta files: let Unity regenerate with correct GUIDs (assigned by path at build time)
+Assets/Audio/*.meta
+
 # This .gitignore file should be placed at the root of your Unity project directory
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore

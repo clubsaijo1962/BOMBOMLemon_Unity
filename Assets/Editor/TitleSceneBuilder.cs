@@ -18,9 +18,11 @@ namespace BOMBOMLemon.Editor
 
         static void OnFirstUpdate()
         {
-            EditorApplication.update -= OnFirstUpdate;
+            // Keep waiting until we are in a safe editor state (not play mode)
+            if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
 
-            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            EditorApplication.update -= OnFirstUpdate;
 
             const string scenePath = "Assets/Scenes/TitleScene.unity";
             if (!System.IO.File.Exists(scenePath)) return;
