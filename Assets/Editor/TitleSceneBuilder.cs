@@ -13,6 +13,8 @@ namespace BOMBOMLemon.Editor
     {
         static TitleSceneAutoBuilder()
         {
+            // Fix invalid activeInputHandler before Input System reads it
+            TitleSceneBuilder.FixActiveInputHandler();
             EditorApplication.update += OnFirstUpdate;
         }
 
@@ -556,15 +558,39 @@ namespace BOMBOMLemon.Editor
 
         // ── Input System setting fix ──────────────────────────────────────
         // activeInputHandler: 0=Old, 1=New(InputSystem), 2=Both; -1 is invalid
-        static void FixActiveInputHandler()
+        // Called both from [InitializeOnLoad] (early, before Input System reads it)
+        // and from Build() as a safety net.
+        internal static void FixActiveInputHandler()
         {
             const string path = "ProjectSettings/ProjectSettings.asset";
             if (!System.IO.File.Exists(path)) return;
+
+            // Fix on disk
             var text = System.IO.File.ReadAllText(path);
-            if (!text.Contains("m_ActiveInputHandler: -1")) return;
-            System.IO.File.WriteAllText(path,
-                text.Replace("m_ActiveInputHandler: -1", "m_ActiveInputHandler: 1"));
-            Debug.Log("[BOMBOMLemon] Fixed activeInputHandler -1 → 1 (New Input System)");
+            if (text.Contains("m_ActiveInputHandler: -1"))
+            {
+                System.IO.File.WriteAllText(path,
+                    text.Replace("m_ActiveInputHandler: -1", "m_ActiveInputHandler: 1"));
+                Debug.Log("[BOMBOMLemon] Fixed activeInputHandler -1 → 1 on disk");
+            }
+
+            // Fix in memory (PlayerSettings serialized object)
+            try
+            {
+                var assets = AssetDatabase.LoadAllAssetsAtPath(path);
+                if (assets.Length > 0 && assets[0] != null)
+                {
+                    var so = new SerializedObject(assets[0]);
+                    var prop = so.FindProperty("activeInputHandler");
+                    if (prop != null && prop.intValue == -1)
+                    {
+                        prop.intValue = 1;
+                        so.ApplyModifiedPropertiesWithoutUndo();
+                        Debug.Log("[BOMBOMLemon] Fixed activeInputHandler -1 → 1 in memory");
+                    }
+                }
+            }
+            catch { /* PlayerSettings not yet loaded — disk fix will take effect on restart */ }
         }
 
         // ── EventSystem: switch to InputSystem module ─────────────────────
