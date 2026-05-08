@@ -558,14 +558,12 @@ namespace BOMBOMLemon.Editor
 
         // ── Input System setting fix ──────────────────────────────────────
         // activeInputHandler: 0=Old, 1=New(InputSystem), 2=Both; -1 is invalid
-        // Called both from [InitializeOnLoad] (early, before Input System reads it)
-        // and from Build() as a safety net.
         internal static void FixActiveInputHandler()
         {
             const string path = "ProjectSettings/ProjectSettings.asset";
             if (!System.IO.File.Exists(path)) return;
 
-            // Fix on disk
+            // Fix on disk first
             var text = System.IO.File.ReadAllText(path);
             if (text.Contains("m_ActiveInputHandler: -1"))
             {
@@ -574,13 +572,13 @@ namespace BOMBOMLemon.Editor
                 Debug.Log("[BOMBOMLemon] Fixed activeInputHandler -1 → 1 on disk");
             }
 
-            // Fix in memory (PlayerSettings serialized object)
+            // Fix in memory via PlayerSettings singleton (runs before Input System delayCall)
             try
             {
-                var assets = AssetDatabase.LoadAllAssetsAtPath(path);
-                if (assets.Length > 0 && assets[0] != null)
+                var ps = Unsupported.GetSerializedAssetInterfaceSingleton("PlayerSettings");
+                if (ps != null)
                 {
-                    var so = new SerializedObject(assets[0]);
+                    var so = new SerializedObject(ps);
                     var prop = so.FindProperty("activeInputHandler");
                     if (prop != null && prop.intValue == -1)
                     {
@@ -590,7 +588,7 @@ namespace BOMBOMLemon.Editor
                     }
                 }
             }
-            catch { /* PlayerSettings not yet loaded — disk fix will take effect on restart */ }
+            catch { /* non-critical */ }
         }
 
         // ── EventSystem: switch to InputSystem module ─────────────────────
