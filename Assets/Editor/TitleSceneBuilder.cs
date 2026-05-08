@@ -7,6 +7,35 @@ using UnityEngine.UI;
 
 namespace BOMBOMLemon.Editor
 {
+    // Auto-builds TitleScene on first editor load if the scene is empty
+    [InitializeOnLoad]
+    public static class TitleSceneAutoBuilder
+    {
+        static TitleSceneAutoBuilder()
+        {
+            EditorApplication.update += OnFirstUpdate;
+        }
+
+        static void OnFirstUpdate()
+        {
+            EditorApplication.update -= OnFirstUpdate;
+
+            const string scenePath = "Assets/Scenes/TitleScene.unity";
+            if (!System.IO.File.Exists(scenePath)) return;
+
+            // Open additively just to count root objects
+            var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+            int rootCount = scene.rootCount;
+            EditorSceneManager.CloseScene(scene, false);
+
+            if (rootCount <= 2)
+            {
+                Debug.Log("[BOMBOMLemon] Scene is empty — auto-building Title Scene...");
+                TitleSceneBuilder.Build();
+            }
+        }
+    }
+
     public static class TitleSceneBuilder
     {
         // ── Reference resolution = iPhone logical points (matches SwiftUI geo.size) ──
