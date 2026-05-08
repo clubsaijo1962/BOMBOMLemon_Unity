@@ -573,28 +573,60 @@ namespace BOMBOMLemon.Editor
         // ═══════════════════════════════════════════════════════════════════
         static void BuildRulesContent(GameObject panel)
         {
-            string[] rules =
+            // (ja, en) pairs matching iOS TitleView.rules
+            var rules = new (string ja, string en)[]
             {
-                "全員でライフレモンを守るチームゲーム",
-                "出番のプレイヤーだけ0〜99の数字を見る",
-                "お題に合う答えを言う",
-                "全員で相談して数字を予想する",
-                "差の分だけライフレモンが減る",
-                "ぴったりならライフレモンが増える",
-                "全員のターンが終わるまでレモンを守りきれば勝利",
+                ("全員でライフレモンを守るチームゲーム",               "Team game to protect life lemons"),
+                ("出番のプレイヤーだけ0〜99の数字を見る",             "Only the active player sees a number 0–99"),
+                ("お題に合う答えを言う",                               "Say an answer that matches the topic"),
+                ("全員で相談して数字を予想する",                       "Discuss and guess the number together"),
+                ("差の分だけライフレモンが減る",                       "Life lemons decrease by the difference"),
+                ("ぴったりならライフレモンが増える",                   "Perfect match increases life lemons"),
+                ("全員のターンが終わるまでレモンを守りきれば勝利",     "Win by surviving all turns"),
             };
-            var (_, contentRT) = MakeScrollView(panel, 110, 20, 20);
-            var vl = contentRT.gameObject.AddComponent<VerticalLayoutGroup>();
-            vl.spacing = 12; vl.childForceExpandWidth = true; vl.childForceExpandHeight = false;
-            foreach (var rule in rules)
+
+            var (_, contentRT) = MakeScrollView(panel, 110, 16, 16);
+            var vlg = contentRT.gameObject.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing = 6; vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
+            vlg.padding = new RectOffset(0, 0, 4, 8);
+
+            for (int i = 0; i < rules.Length; i++)
             {
-                var rGo = new GameObject("Rule"); rGo.transform.SetParent(contentRT, false);
-                rGo.AddComponent<LayoutElement>().minHeight = 36;
-                var txt = rGo.AddComponent<Text>();
-                txt.text = "● " + rule; txt.fontSize = 15; txt.fontStyle = FontStyle.Bold;
-                txt.color = DarkBrown; txt.alignment = TextAnchor.MiddleLeft;
-                txt.horizontalOverflow = HorizontalWrapMode.Wrap;
-                txt.verticalOverflow   = VerticalWrapMode.Overflow;
+                var (ja, en) = rules[i];
+
+                // Row container (vertical: ja + en stacked)
+                var rowGo = new GameObject($"Rule{i + 1}");
+                rowGo.transform.SetParent(contentRT, false);
+                var rowLE = rowGo.AddComponent<LayoutElement>();
+                rowLE.minHeight = 58;
+                var rowVL = rowGo.AddComponent<VerticalLayoutGroup>();
+                rowVL.childForceExpandWidth = true; rowVL.childForceExpandHeight = false;
+                rowVL.padding = new RectOffset(4, 4, 6, 6); rowVL.spacing = 2;
+
+                // Optional: subtle card background for odd rows
+                if (i % 2 == 0)
+                {
+                    var bg = rowGo.AddComponent<Image>();
+                    bg.color = new Color(1f, 1f, 1f, 0.25f);
+                }
+
+                // Japanese text  ● {ja}
+                var jaGo = new GameObject("Ja"); jaGo.transform.SetParent(rowGo.transform, false);
+                jaGo.AddComponent<LayoutElement>().minHeight = 28;
+                var jaTxt = jaGo.AddComponent<Text>();
+                jaTxt.text = $"● {ja}"; jaTxt.fontSize = 15; jaTxt.fontStyle = FontStyle.Bold;
+                jaTxt.color = DarkBrown; jaTxt.alignment = TextAnchor.MiddleLeft;
+                jaTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
+                jaTxt.verticalOverflow   = VerticalWrapMode.Overflow;
+
+                // English text
+                var enGo = new GameObject("En"); enGo.transform.SetParent(rowGo.transform, false);
+                enGo.AddComponent<LayoutElement>().minHeight = 20;
+                var enTxt = enGo.AddComponent<Text>();
+                enTxt.text = $"  {en}"; enTxt.fontSize = 11; enTxt.fontStyle = FontStyle.Normal;
+                enTxt.color = SubBrown; enTxt.alignment = TextAnchor.MiddleLeft;
+                enTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
+                enTxt.verticalOverflow   = VerticalWrapMode.Overflow;
             }
         }
 
