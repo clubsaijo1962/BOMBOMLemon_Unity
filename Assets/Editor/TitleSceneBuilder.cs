@@ -20,6 +20,8 @@ namespace BOMBOMLemon.Editor
         {
             EditorApplication.update -= OnFirstUpdate;
 
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+
             const string scenePath = "Assets/Scenes/TitleScene.unity";
             if (!System.IO.File.Exists(scenePath)) return;
 
